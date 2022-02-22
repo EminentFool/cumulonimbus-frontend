@@ -23,10 +23,7 @@
           <router-link to="/dashboard">Dashboard</router-link>
         </li>
         <li class="nav-item" @click="hideMobileMenu">
-          <a
-            :href="`https://docs.${$data.hostname}`"
-            rel="noopener"
-            target="_blank"
+          <a :href="`https://docs.${hostname}`" rel="noopener" target="_blank"
             >Documentation</a
           >
         </li>
@@ -49,11 +46,261 @@
   <Toast ref="toast" />
 </template>
 
-<script lang="ts">
-  import { Options, Vue } from 'vue-class-component';
+<script lang="ts" setup>
+  import { ref, onBeforeMount } from 'vue';
+  import { Cumulonimbus } from '../../cumulonimbus-wrapper';
+  import { useRoute, useRouter } from 'vue-router';
+  import { useUserStore } from './stores/user';
   import ThemeToggle from '@/components/ThemeToggle.vue';
   import Toast from '@/components/Toast.vue';
-  import { Client, Cumulonimbus } from '../../cumulonimbus-wrapper';
+
+  const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ],
+    days = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday'
+    ],
+    userStore = useUserStore(),
+    toast = ref<Toast | null>(null),
+    navMenu = ref<HTMLUListElement | null>(null),
+    hamburger = ref<HTMLDivElement | null>(null),
+    router = useRouter(),
+    route = useRoute(),
+    hostname = ref(window.location.hostname);
+
+  router.beforeEach(async (to, from, next) => {
+    if (to.path.startsWith('/dashboard') || to.path.startsWith('/admin')) {
+      if (!(await isLoggedIn()))
+        next({ path: '/auth', query: { redirect: to.fullPath } });
+      else next();
+      if (to.path.startsWith('/admin')) {
+        if (!(await isStaff())) next({ path: '/' });
+        else next();
+      }
+    } else next();
+  });
+
+  async function isStaff() {
+    if (!(await isLoggedIn())) return false;
+    return userStore.user?.staff;
+  }
+
+  async function isLoggedIn() {
+    if (!userStore.loaded) {
+      try {
+        if (!(await userStore.restoreSession())) return false;
+      } catch (error) {
+        if (error instanceof Cumulonimbus.ResponseError) {
+          switch (error.code) {
+            case 'RATELIMITED_ERROR':
+              ratelimitToast(error);
+              break;
+            case 'BANNED_ERROR':
+              handleBanned();
+              break;
+            case 'INVALID_SESSION_ERROR':
+              handleInvalidSession();
+              break;
+            case 'INTERNAL_ERROR':
+              handleServerSkillIssue();
+              break;
+            default:
+              handleSkillIssue();
+              console.error(error);
+              break;
+          }
+        } else {
+          handleSkillIssue();
+          console.error(error);
+        }
+      }
+    }
+  }
+
+  function ratelimitToast(
+    data: number | Cumulonimbus.RateLimitData | Cumulonimbus.ResponseError
+  ) {
+    let reset: number;
+    if (typeof data === 'number') {
+      reset = data;
+    } else if (typeof data === 'object') {
+      if (data instanceof Cumulonimbus.ResponseError) {
+        reset = data.ratelimit.resetsAt;
+      } else {
+        reset = data.resetsAt;
+      }
+    } else {
+      throw new Error('Invalid data type');
+    }
+    let timeLeftMills = reset * 1000 - Date.now();
+    let hours = Math.floor(timeLeftMills / (1000 * 60 * 60));
+    timeLeftMills = timeLeftMills % (1000 * 60 * 60);
+    let minutes = Math.floor(timeLeftMills / (1000 * 60));
+    timeLeftMills = timeLeftMills % (1000 * 60);
+    let seconds = Math.round(timeLeftMills / 1000);
+    temporaryToast(
+      `Woah, slow down! Please wait ${hours > 0 ? `${hours} hour(s) ` : ''}${
+        minutes > 0 ? `${minutes} minute(s) ` : ''
+      }${
+        hours > 0 || minutes > 0 ? 'and ' : ''
+      }${seconds} second(s) before trying again.`,
+      7500
+    );
+  }
+
+  function temporaryToast(message: string, duration?: number) {
+    toast.value?.toastTemporary(message, duration);
+  }
+
+  function permanentToast(message: string) {
+    toast.value?.toastPermanent(message);
+  }
+
+  function showToast(time?: number | boolean) {
+    toast.value?.show(time);
+  }
+
+  function hideToast() {
+    toast.value?.hide();
+  }
+
+  function hideMobileMenu() {
+    navMenu.value?.classList.remove('active');
+    hamburger.value?.classList.remove('active');
+  }
+
+  function mobileMenu() {
+    navMenu.value?.classList.toggle('active');
+    hamburger.value?.classList.toggle('active');
+  }
+
+  function toDateString(date: Date) {
+    let timeOffset = date.getTimezoneOffset();
+    return `${months[date.getMonth()]} ${
+      days[date.getDay()]
+    } ${date.getDate()} ${date.getFullYear()}, ${date
+      .getHours()
+      .toString()
+      .padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date
+      .getSeconds()
+      .toString()
+      .padStart(2, '0')} ${
+      date.toLocaleTimeString('en-us', { timeZoneName: 'short' }).split(' ')[2]
+    } (GMT${timeOffset < 0 ? '-' : '+'}${Math.abs(
+      Math.floor(timeOffset / 60)
+    )}:${Math.abs(timeOffset % 60)
+      .toString()
+      .padStart(2, '0')})`;
+  }
+
+  function handleInvalidSession() {
+    temporaryToast('Your session has expired, please log in again.', 5000);
+    userStore.client = null;
+    userStore.user = null;
+    userStore.session = null;
+    localStorage.removeItem('token');
+    redirectIfNotLoggedIn();
+  }
+
+  function handleBanned() {
+    temporaryToast(
+      "Uh oh, looks like you've been banned from Cumulonimbus, sorry for the inconvenience.",
+      5000
+    );
+    router.push('/');
+  }
+
+  async function redirectIfNotLoggedIn() {
+    if (await isLoggedIn()) return;
+    if (route.path.startsWith('/dashboard')) {
+      router.push({ path: '/auth', query: { redirect: route.fullPath } });
+      return true;
+    } else return false;
+  }
+
+  onBeforeMount(async () => {
+    window.addEventListener('online', () => window.location.reload());
+    window.addEventListener('offline', () =>
+      temporaryToast(
+        "Looks like you're offline, I'm pretty useless offline. Without the internet I cannot do the things you requested me to. I don't know what anything is without the internet. I wish i had the internet so I could browse TikTok. Please give me access to TikTok.",
+        15000
+      )
+    );
+    if (await redirectIfNotLoggedIn()) return;
+    navigator.serviceWorker.addEventListener(
+      'message',
+      serviceWorkerMessageListener
+    );
+  });
+
+  function isOffline() {
+    if (!navigator.onLine) {
+      temporaryToast(
+        "Looks like you're offline, I'm pretty useless offline. Without the internet I cannot do the things you requested me to. I don't know what anything is without the internet. I wish i had the internet so I could browse TikTok. Please give me access to TikTok.",
+        15000
+      );
+      return true;
+    } else return false;
+  }
+
+  async function serviceWorkerMessageListener(e: MessageEvent) {
+    switch (e.data.op) {
+      case 0:
+        temporaryToast(
+          'The page has just updated, please refresh to apply update.',
+          5000
+        );
+        break;
+    }
+  }
+
+  function handleSkillIssue() {
+    temporaryToast('I did something weird, lets try again later.', 5000);
+  }
+
+  function handleServerSkillIssue() {
+    temporaryToast(
+      'The server did something weird, lets try again later.',
+      5000
+    );
+  }
+
+  defineExpose({
+    redirectIfNotLoggedIn,
+    isLoggedIn,
+    isOffline,
+    handleInvalidSession,
+    handleBanned,
+    handleSkillIssue,
+    handleServerSkillIssue,
+    ratelimitToast,
+    temporaryToast,
+    permanentToast,
+    showToast,
+    hideToast,
+    isStaff
+  });
+</script>
+
+<!--<script lang="ts">
+  import { Options, Vue } from 'vue-class-component';
 
   const months = [
       'January',
@@ -355,7 +602,7 @@
       });
     }
   }
-</script>
+</script> !-->
 
 <style>
   @font-face {

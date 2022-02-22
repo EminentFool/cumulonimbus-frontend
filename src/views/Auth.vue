@@ -83,7 +83,12 @@
   </div>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
+  import { Cumulonimbus } from '../../../cumulonimbus-wrapper';
+  import ToggleSwitch from '@/components/ToggleSwitch.vue';
+</script>
+
+<!--<script lang="ts">
   import { Options, Vue } from 'vue-class-component';
   import { Cumulonimbus } from '../../../cumulonimbus-wrapper';
   import App from '@/App.vue';
@@ -120,7 +125,7 @@
         if (error instanceof Cumulonimbus.ResponseError) {
           switch (error.code) {
             case 'BANNED_ERROR':
-              (this.$parent?.$parent as App).temporaryToast(
+              (this.$parent?.$parent as typeof App).temporaryToast(
                 "Uh oh, looks like you've been banned from Cumulonimbus, sorry for the inconvenience.",
                 5000
               );
@@ -262,7 +267,7 @@
       );
     }
   }
-</script>
+</script> !-->
 
 <style>
   .auth-box-container {

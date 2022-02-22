@@ -46,23 +46,28 @@
     props: {
       labelLeft: {
         type: String,
-        default: null
+        default: null,
+        required: false
       },
       labelRight: {
         type: String,
-        default: null
+        default: null,
+        required: false
       },
       isChecked: {
         type: Boolean,
-        default: false
+        default: false,
+        required: false
       },
       labelsChangeValue: {
         type: Boolean,
-        default: false
+        default: false,
+        required: false
       },
       name: {
         type: String,
-        default: 'toggle-switch'
+        default: 'toggle-switch',
+        required: false
       }
     },
     emits: ['change', 'leftLabelClick', 'rightLabelClick'],
