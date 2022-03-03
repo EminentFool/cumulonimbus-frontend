@@ -257,7 +257,12 @@
       <input type="submit" />
     </form>
   </ConfirmModal>
-  <DomainModal ref="changeDomainModal" :domain="$store.state.user?.domain" :subdomain="$store.state.user?.subdomain" @confirm="changeDomain" />
+  <DomainModal
+    ref="changeDomainModal"
+    :domain="$store.state.user?.domain"
+    :subdomain="$store.state.user?.subdomain"
+    @confirm="changeDomain"
+  />
   <ConfirmModal
     ref="clearCacheModal"
     title="Clear preview cache"
@@ -402,7 +407,7 @@
   import Loading from '@/components/Loading.vue';
   import ContentBox from '@/components/ContentBox.vue';
   import App from '@/App.vue';
-  import { Client, Cumulonimbus } from '../../../cumulonimbus-wrapper';
+  import { Client, Cumulonimbus } from 'cumulonimbus-wrapper';
   import FullscreenLoading from '@/components/FullscreenLoading.vue';
   import ConfirmModal from '@/components/ConfirmModal.vue';
   import ToggleSwitch from '@/components/ToggleSwitch.vue';

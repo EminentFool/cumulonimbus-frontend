@@ -32,7 +32,7 @@
 
 <script lang="ts">
   import { Options, Vue } from 'vue-class-component';
-  import { Client, Cumulonimbus } from '../../../cumulonimbus-wrapper';
+  import { Client, Cumulonimbus } from 'cumulonimbus-wrapper';
   import ConfirmModal from '@/components/ConfirmModal.vue';
   import App from '@/App.vue';
 
@@ -96,8 +96,11 @@
       }
       if (!r.test((event as InputEvent).data as string)) event.preventDefault();
       if ((event as InputEvent).data === ' ') {
-        let curPos = input.selectionStart as number + 1;
-        input.value = input.value.substring(0, curPos - 1) + '-' + input.value.substring(curPos - 1, input.value.length);
+        let curPos = (input.selectionStart as number) + 1;
+        input.value =
+          input.value.substring(0, curPos - 1) +
+          '-' +
+          input.value.substring(curPos - 1, input.value.length);
         input.setSelectionRange(curPos, curPos);
       }
     }

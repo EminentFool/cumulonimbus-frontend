@@ -1,5 +1,5 @@
 import { createStore } from 'vuex';
-import { Client, Cumulonimbus } from '../../../cumulonimbus-wrapper';
+import { Client, Cumulonimbus } from 'cumulonimbus-wrapper';
 
 const clientOptions: Cumulonimbus.ClientOptions = {
   baseURL: '/api',

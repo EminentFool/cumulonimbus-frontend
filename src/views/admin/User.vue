@@ -293,7 +293,7 @@
 
 <script lang="ts">
   import { Options, Vue } from 'vue-class-component';
-  import { Client, Cumulonimbus } from '../../../../cumulonimbus-wrapper';
+  import { Client, Cumulonimbus } from 'cumulonimbus-wrapper';
   import Loading from '@/components/Loading.vue';
   import FullscreenLoading from '@/components/FullscreenLoading.vue';
   import ContentBox from '@/components/ContentBox.vue';

@@ -23,10 +23,7 @@
           <router-link to="/dashboard">Dashboard</router-link>
         </li>
         <li class="nav-item" @click="hideMobileMenu">
-          <a
-            :href="`https://docs.${$data.hostname}`"
-            rel="noopener"
-            target="_blank"
+          <a :href="`https://docs.${hostname}`" rel="noopener" target="_blank"
             >Documentation</a
           >
         </li>
@@ -46,16 +43,19 @@
   <div class="content">
     <router-view />
   </div>
-  <Toast ref="toast" />
+  <Toast ref="toaster" />
 </template>
 
-<script lang="ts">
-  import { Options, Vue } from 'vue-class-component';
+<script setup lang="ts">
   import ThemeToggle from '@/components/ThemeToggle.vue';
   import Toast from '@/components/Toast.vue';
-  import { Client, Cumulonimbus } from '../../cumulonimbus-wrapper';
+  import { useUserData } from './store/UserData';
+  import { useRouter } from 'vue-router';
+  import { provide, Ref, ref } from 'vue';
+  import { Cumulonimbus } from 'cumulonimbus-wrapper';
 
-  const months = [
+  const userData = useUserData(),
+    months = [
       'January',
       'February',
       'March',
@@ -77,221 +77,188 @@
       'Thursday',
       'Friday',
       'Saturday'
-    ];
+    ],
+    router = useRouter(),
+    toaster = (ref<Toast>() as Ref<Toast>).value,
+    navMenu = (ref<HTMLElement>() as Ref<HTMLElement>).value,
+    hamburger = (ref<HTMLElement>() as Ref<HTMLElement>).value;
 
-  @Options({
-    components: {
-      ThemeToggle,
-      Toast
-    },
-    data() {
-      return {
-        hostname: undefined
-      };
-    }
-  })
-  export default class App extends Vue {
-    declare $refs: {
-      navMenu: HTMLUListElement;
-      hamburger: HTMLDivElement;
-      toast: Toast;
-    };
+  provide('toaster', toaster);
 
-    declare $data: {
-      hostname?: string;
-    };
+  let hostname: string;
+</script>
 
-    async isLoggedIn() {
-      if (!this.$store.state.loadComplete) {
+<script lang="ts">
+  export default {
+    methods: {
+      async isLoggedIn() {
+        if (!userData.loaded) {
+          try {
+            if (!(await userData.restoreSession())) return false;
+          } catch (error) {
+            if (error instanceof Cumulonimbus.ResponseError) {
+              switch (error.code) {
+                case 'RATELIMITED_ERROR':
+                  toaster.ratelimitToast(error.ratelimit.resetsAt);
+                  break;
+                case 'INVALID_SESSION_ERROR':
+                  if (window.location.pathname.includes('/dashboard'))
+                    this.redirectIfNotLoggedIn(
+                      window.location.pathname + window.location.search
+                    );
+                  localStorage.removeItem('token');
+                  break;
+                case 'BANNED_ERROR':
+                  toaster.temporaryToast(
+                    "Uh oh, looks like you've been banned from Cumulonimbus, sorry for the inconvenience.",
+                    5000
+                  );
+                  localStorage.removeItem('token');
+                  break;
+                case 'INTERNAL_ERROR':
+                  toaster.temporaryToast(
+                    'The server did something weird, lets try again later.',
+                    5000
+                  );
+                  break;
+                default:
+                  toaster.temporaryToast(
+                    'Something weird happened, lets try again later.'
+                  );
+                  break;
+              }
+            } else {
+              toaster.temporaryToast(
+                'Something weird happened, lets try again later.'
+              );
+            }
+          }
+        }
         try {
-          if (!(await this.$store.dispatch('restoreSession'))) return false;
+          if (!!userData.client) {
+            let authCheck = await userData.checkClientAuth();
+            if (typeof authCheck === 'boolean') return authCheck;
+            else return false;
+          } else return false;
         } catch (error) {
           if (error instanceof Cumulonimbus.ResponseError) {
             switch (error.code) {
               case 'RATELIMITED_ERROR':
-                this.ratelimitToast(error.ratelimit.resetsAt);
-                break;
-              case 'INVALID_SESSION_ERROR':
-                if (window.location.pathname.includes('/dashboard'))
-                  this.redirectIfNotLoggedIn(
-                    window.location.pathname + window.location.search
-                  );
-                localStorage.removeItem('token');
-                break;
+                toaster.ratelimitToast(error.ratelimit.resetsAt);
+                return true;
               case 'BANNED_ERROR':
-                this.temporaryToast(
+                toaster.temporaryToast(
                   "Uh oh, looks like you've been banned from Cumulonimbus, sorry for the inconvenience.",
                   5000
                 );
+
                 localStorage.removeItem('token');
-                break;
+                return false;
               case 'INTERNAL_ERROR':
-                this.temporaryToast(
+                toaster.temporaryToast(
                   'The server did something weird, lets try again later.',
                   5000
                 );
-                break;
+                return true;
               default:
-                this.temporaryToast(
+                toaster.temporaryToast(
                   'Something weird happened, lets try again later.'
                 );
-                break;
+                return true;
             }
           } else {
-            this.temporaryToast(
+            toaster.temporaryToast(
               'Something weird happened, lets try again later.'
             );
+            return true;
           }
         }
-      }
-      try {
-        if (!!this.$store.state.client) {
-          let authCheck = await this.$store.dispatch('checkClientAuth');
-          if (typeof authCheck === 'boolean') return authCheck;
-          else return false;
-        } else return false;
-      } catch (error) {
-        if (error instanceof Cumulonimbus.ResponseError) {
-          switch (error.code) {
-            case 'RATELIMITED_ERROR':
-              this.ratelimitToast(error.ratelimit.resetsAt);
-              return true;
-            case 'BANNED_ERROR':
-              this.temporaryToast(
-                "Uh oh, looks like you've been banned from Cumulonimbus, sorry for the inconvenience.",
-                5000
-              );
-              this.$store.commit('setUser', null);
-              this.$store.commit('setSession', null);
-              this.$store.commit('setClient', null);
-              localStorage.removeItem('token');
-              return false;
-            case 'INTERNAL_ERROR':
-              this.temporaryToast(
-                'The server did something weird, lets try again later.',
-                5000
-              );
-              return true;
-            default:
-              this.temporaryToast(
-                'Something weird happened, lets try again later.'
-              );
-              return true;
-          }
-        } else {
-          this.temporaryToast(
-            'Something weird happened, lets try again later.'
-          );
+      },
+
+      async isStaff() {
+        //check if logged in first, no bother checking staff if they aren't logged in
+        if (!(await this.isLoggedIn())) return false;
+        return userData.user?.staff as boolean;
+      },
+
+      async redirectIfNotLoggedIn(path: string): Promise<boolean> {
+        if (!(await this.isLoggedIn())) {
+          if (!path.startsWith('/dashboard')) return false;
+          router.push(`/auth/?redirect=${path}`);
           return true;
+        } else return false;
+      },
+
+      mobileMenu() {
+        navMenu.classList.toggle('active');
+        hamburger.classList.toggle('active');
+      },
+
+      hideMobileMenu() {
+        navMenu.classList.remove('active');
+        hamburger.classList.remove('active');
+      },
+
+      toDateString(date: Date) {
+        let timeOffset = date.getTimezoneOffset();
+        return `${months[date.getMonth()]} ${
+          days[date.getDay()]
+        } ${date.getDate()} ${date.getFullYear()}, ${date
+          .getHours()
+          .toString()
+          .padStart(2, '0')}:${date
+          .getMinutes()
+          .toString()
+          .padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')} ${
+          date
+            .toLocaleTimeString('en-us', { timeZoneName: 'short' })
+            .split(' ')[2]
+        } (GMT${timeOffset < 0 ? '-' : '+'}${Math.abs(
+          Math.floor(timeOffset / 60)
+        )}:${Math.abs(timeOffset % 60)
+          .toString()
+          .padStart(2, '0')})`;
+      },
+
+      handleInvalidSession() {
+        toaster.temporaryToast(
+          'Your session has expired, please log in again.',
+          5000
+        );
+        this.$store.commit('setUser', null);
+        this.$store.commit('setSession', null);
+        this.$store.commit('setClient', null);
+        localStorage.removeItem('token');
+        this.redirectIfNotLoggedIn(
+          window.location.pathname + window.location.search
+        );
+      },
+
+      handleBannedUser() {
+        toaster.temporaryToast(
+          "Uh oh, looks like you've been banned from Cumulonimbus, sorry for the inconvenience.",
+          5000
+        );
+        this.$store.commit('setUser', null);
+        this.$store.commit('setSession', null);
+        this.$store.commit('setClient', null);
+        localStorage.removeItem('token');
+        this.redirectIfNotLoggedIn(
+          window.location.pathname + window.location.search
+        );
+      },
+
+      async serviceWorkerListener(e: MessageEvent) {
+        switch (e.data.op) {
+          case 0:
+            toaster.temporaryToast(
+              'The page has just updated, please refresh to apply update.',
+              5000
+            );
+            break;
         }
       }
-    }
-
-    async isStaff() {
-      //check if logged in first, no bother checking staff if they aren't logged in
-      if (!(await this.isLoggedIn())) return false;
-      return this.$store.state.user?.staff as boolean;
-    }
-
-    async redirectIfNotLoggedIn(path: string): Promise<boolean> {
-      if (!(await this.isLoggedIn())) {
-        if (!path.startsWith('/dashboard')) return false;
-        this.$router.push(`/auth/?redirect=${path}`);
-        return true;
-      } else return false;
-    }
-
-    mobileMenu() {
-      this.$refs.navMenu.classList.toggle('active');
-      this.$refs.hamburger.classList.toggle('active');
-    }
-
-    hideMobileMenu() {
-      this.$refs.navMenu.classList.remove('active');
-      this.$refs.hamburger.classList.remove('active');
-    }
-
-    showToast(time?: number | boolean) {
-      this.$refs.toast.show(time);
-    }
-
-    hideToast() {
-      this.$refs.toast.hide();
-    }
-
-    temporaryToast(text: string, time?: number) {
-      this.$refs.toast.toastTemporary(text, time);
-    }
-
-    permanentToast(text: string) {
-      this.$refs.toast.toastPermanent(text);
-    }
-
-    toDateString(date: Date) {
-      let timeOffset = date.getTimezoneOffset();
-      return `${months[date.getMonth()]} ${
-        days[date.getDay()]
-      } ${date.getDate()} ${date.getFullYear()}, ${date
-        .getHours()
-        .toString()
-        .padStart(2, '0')}:${date
-        .getMinutes()
-        .toString()
-        .padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')} ${
-        date
-          .toLocaleTimeString('en-us', { timeZoneName: 'short' })
-          .split(' ')[2]
-      } (GMT${timeOffset < 0 ? '-' : '+'}${Math.abs(
-        Math.floor(timeOffset / 60)
-      )}:${Math.abs(timeOffset % 60)
-        .toString()
-        .padStart(2, '0')})`;
-    }
-
-    ratelimitToast(reset: number) {
-      let timeLeftMills = reset * 1000 - Date.now();
-      let hours = Math.floor(timeLeftMills / (1000 * 60 * 60));
-      timeLeftMills = timeLeftMills % (1000 * 60 * 60);
-      let minutes = Math.floor(timeLeftMills / (1000 * 60));
-      timeLeftMills = timeLeftMills % (1000 * 60);
-      let seconds = Math.round(timeLeftMills / 1000);
-      this.temporaryToast(
-        `Woah, slow down! Please wait ${hours > 0 ? `${hours} hour(s) ` : ''}${
-          minutes > 0 ? `${minutes} minute(s) ` : ''
-        }${
-          hours > 0 || minutes > 0 ? 'and ' : ''
-        }${seconds} second(s) before trying again.`,
-        7500
-      );
-    }
-
-    handleInvalidSession() {
-      this.temporaryToast(
-        'Your session has expired, please log in again.',
-        5000
-      );
-      this.$store.commit('setUser', null);
-      this.$store.commit('setSession', null);
-      this.$store.commit('setClient', null);
-      localStorage.removeItem('token');
-      (this.$parent?.$parent as App).redirectIfNotLoggedIn(
-        window.location.pathname + window.location.search
-      );
-    }
-
-    handleBannedUser() {
-      this.temporaryToast(
-        "Uh oh, looks like you've been banned from Cumulonimbus, sorry for the inconvenience.",
-        5000
-      );
-      this.$store.commit('setUser', null);
-      this.$store.commit('setSession', null);
-      this.$store.commit('setClient', null);
-      localStorage.removeItem('token');
-      (this.$parent?.$parent as App).redirectIfNotLoggedIn(
-        window.location.pathname + window.location.search
-      );
-    }
+    },
 
     async beforeMount() {
       await this.redirectIfNotLoggedIn(
@@ -300,7 +267,7 @@
 
       window.addEventListener('online', () => window.location.reload());
       window.addEventListener('offline', () =>
-        this.temporaryToast(
+        toaster.temporaryToast(
           "Looks like you're offline, I'm pretty useless offline. Without the internet I cannot do the things you requested me to. I don't know what anything is without the internet. I wish i had the internet so I could browse TikTok. Please give me access to TikTok.",
           15000
         )
@@ -310,22 +277,10 @@
         this.serviceWorkerListener
       );
       if (!navigator.onLine) return;
-    }
-
-    async serviceWorkerListener(e: MessageEvent) {
-      switch (e.data.op) {
-        case 0:
-          this.temporaryToast(
-            'The page has just updated, please refresh to apply update.',
-            5000
-          );
-          break;
-      }
-    }
+    },
 
     async mounted() {
-      this.$data.hostname = window.location.hostname;
-      this.$router.beforeEach(async (to, from, next) => {
+      router.beforeEach(async (to, from, next) => {
         if (to.path.startsWith('/dashboard')) {
           let loggedIn = await this.isLoggedIn();
           if (!loggedIn)
@@ -351,7 +306,7 @@
         } else next();
       });
     }
-  }
+  };
 </script>
 
 <style>

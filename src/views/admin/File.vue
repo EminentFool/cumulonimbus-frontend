@@ -70,7 +70,7 @@
   import ConfirmModal from '@/components/ConfirmModal.vue';
   import Loading from '@/components/Loading.vue';
   import FullscreenLoading from '@/components/FullscreenLoading.vue';
-  import { Cumulonimbus, Client } from '../../../../cumulonimbus-wrapper';
+  import { Cumulonimbus, Client } from 'cumulonimbus-wrapper';
   import App from '@/App.vue';
 
   function formatBytes(bytes: number, decimals = 2) {

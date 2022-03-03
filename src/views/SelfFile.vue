@@ -52,7 +52,7 @@
 <script lang="ts">
   import { Options, Vue } from 'vue-class-component';
   import ContentBox from '@/components/ContentBox.vue';
-  import { Client, Cumulonimbus } from '../../../cumulonimbus-wrapper';
+  import { Client, Cumulonimbus } from 'cumulonimbus-wrapper';
   import ConfirmModal from '@/components/ConfirmModal.vue';
   import Loading from '@/components/Loading.vue';
   import App from '@/App.vue';

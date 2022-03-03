@@ -1,6 +1,6 @@
 import { Store } from 'vuex';
-import { Client } from '../../../cumulonimbus-wrapper';
-import { Cumulonimbus } from '../../cumulonimbus-wrapper';
+import { Client } from 'cumulonimbus-wrapper';
+import { Cumulonimbus } from 'cumulonimbus-wrapper';
 
 declare module '@vue/runtime-core' {
   // declare your own store states

@@ -20,15 +20,15 @@
     declare $data: {
       text: string;
       showing: boolean;
-      showTimeout: number | null;
+      showTimeout: number | null | ReturnType<typeof setTimeout>;
     };
 
-    async toastTemporary(text: string, time: number = 10000) {
+    async temporaryToast(text: string, time: number = 10000) {
       this.$data.text = text;
       await this.show(time);
     }
 
-    async toastPermanent(text: string) {
+    async permanentToast(text: string) {
       this.$data.text = text;
       await this.show(true);
     }
@@ -62,6 +62,23 @@
           setTimeout(resolve, 500);
         }
       });
+    }
+
+    ratelimitToast(reset: number) {
+      let timeLeftMills = reset * 1000 - Date.now();
+      let hours = Math.floor(timeLeftMills / (1000 * 60 * 60));
+      timeLeftMills = timeLeftMills % (1000 * 60 * 60);
+      let minutes = Math.floor(timeLeftMills / (1000 * 60));
+      timeLeftMills = timeLeftMills % (1000 * 60);
+      let seconds = Math.round(timeLeftMills / 1000);
+      this.temporaryToast(
+        `Woah, slow down! Please wait ${hours > 0 ? `${hours} hour(s) ` : ''}${
+          minutes > 0 ? `${minutes} minute(s) ` : ''
+        }${
+          hours > 0 || minutes > 0 ? 'and ' : ''
+        }${seconds} second(s) before trying again.`,
+        7500
+      );
     }
   }
 </script>

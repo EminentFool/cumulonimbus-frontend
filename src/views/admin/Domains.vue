@@ -149,7 +149,7 @@
   import Loading from '@/components/Loading.vue';
   import Modal from '@/components/Modal.vue';
   import ToggleSwitch from '@/components/ToggleSwitch.vue';
-  import { Cumulonimbus, Client } from '../../../../cumulonimbus-wrapper';
+  import { Cumulonimbus, Client } from 'cumulonimbus-wrapper';
   import App from '@/App.vue';
 
   @Options({

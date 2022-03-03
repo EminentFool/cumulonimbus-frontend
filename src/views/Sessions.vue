@@ -112,7 +112,7 @@
   import Loading from '@/components/Loading.vue';
   import ContentBox from '@/components/ContentBox.vue';
   import App from '@/App.vue';
-  import { Client, Cumulonimbus } from '../../../cumulonimbus-wrapper';
+  import { Client, Cumulonimbus } from 'cumulonimbus-wrapper';
   import Paginator from '../components/Paginator.vue';
 
   @Options({

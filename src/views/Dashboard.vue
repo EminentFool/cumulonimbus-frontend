@@ -63,7 +63,7 @@
 
 <script lang="ts">
   import { Options, Vue } from 'vue-class-component';
-  import { Cumulonimbus } from '../../../cumulonimbus-wrapper';
+  import { Cumulonimbus } from 'cumulonimbus-wrapper';
   import App from '@/App.vue';
   import ContentBox from '@/components/ContentBox.vue';
 

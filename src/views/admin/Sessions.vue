@@ -68,7 +68,7 @@
   import { Options, Vue } from 'vue-class-component';
   import ConfirmModal from '@/components/ConfirmModal.vue';
   import ContentBox from '@/components/ContentBox.vue';
-  import { Cumulonimbus, Client } from '../../../../cumulonimbus-wrapper';
+  import { Cumulonimbus, Client } from 'cumulonimbus-wrapper';
   import Paginator from '@/components/Paginator.vue';
   import Loading from '@/components/Loading.vue';
   import App from '@/App.vue';

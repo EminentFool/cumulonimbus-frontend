@@ -5,6 +5,7 @@ import router from './router';
 import store from './store';
 import Title from './mixins/Title';
 import packageJSON from '../package.json';
+import { createPinia } from 'pinia';
 
 const app = createApp(App);
 
@@ -14,4 +15,4 @@ app.config.globalProperties.$appInformation = {
   devDependencies: packageJSON.devDependencies
 };
 
-app.use(store).use(router).mixin(Title).mount('#app');
+app.use(createPinia()).use(store).use(router).mixin(Title).mount('#app');

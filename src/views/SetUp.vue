@@ -35,7 +35,7 @@
 <script lang="ts">
   import { Options, Vue } from 'vue-class-component';
   import Modal from '@/components/Modal.vue';
-  import { Client, Cumulonimbus } from '../../../cumulonimbus-wrapper';
+  import { Client, Cumulonimbus } from 'cumulonimbus-wrapper';
   import ContentBox from '@/components/ContentBox.vue';
   import App from '@/App.vue';
   import Paginator from '../components/Paginator.vue';

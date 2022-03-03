@@ -86,7 +86,7 @@
   import Paginator from '@/components/Paginator.vue';
   import FullscreenLoading from '@/components/FullscreenLoading.vue';
   import App from '@/App.vue';
-  import { Client, Cumulonimbus } from '../../../../cumulonimbus-wrapper';
+  import { Client, Cumulonimbus } from 'cumulonimbus-wrapper';
 
   @Options({
     components: {

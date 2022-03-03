@@ -83,162 +83,162 @@
   </div>
 </template>
 
-<script lang="ts">
-  import { Options, Vue } from 'vue-class-component';
-  import { Cumulonimbus } from '../../../cumulonimbus-wrapper';
-  import App from '@/App.vue';
+<script setup lang="ts">
+  import { Cumulonimbus } from 'cumulonimbus-wrapper';
   import ToggleSwitch from '@/components/ToggleSwitch.vue';
+  import { ref, inject } from 'vue';
+  import Toast from '@/components/Toast.vue';
 
-  @Options({
-    components: { ToggleSwitch },
-    data() {
-      return {
-        signIn: true
-      };
-    },
-    title: 'Sign-in/Register'
-  })
-  export default class Auth extends Vue {
-    declare $refs: {
-      signInForm: HTMLFormElement;
-      registerForm: HTMLFormElement;
-    };
-    declare $data: {
-      signIn: boolean;
-    };
-    async submitSignIn() {
-      try {
-        let a = new FormData(this.$refs.signInForm);
+  const toaster = inject<Toast>('toaster'),
+    signInForm = ref<HTMLFormElement>().value,
+    registerForm = ref<HTMLFormElement>().value;
+</script>
 
-        let loginRes = await this.$store.dispatch('login', {
-          user: a.get('user'),
-          pass: a.get('pass'),
-          rememberMe: a.has('rememberMe')
-        });
-        if (loginRes === true) this.authedRedir();
-      } catch (error) {
-        if (error instanceof Cumulonimbus.ResponseError) {
-          switch (error.code) {
-            case 'BANNED_ERROR':
-              (this.$parent?.$parent as App).temporaryToast(
-                "Uh oh, looks like you've been banned from Cumulonimbus, sorry for the inconvenience.",
-                5000
-              );
-              break;
-            case 'RATELIMITED_ERROR':
-              (this.$parent?.$parent as App).ratelimitToast(
-                error.ratelimit.resetsAt
-              );
-              break;
-            case 'INVALID_USER_ERROR':
-              (this.$parent?.$parent as App).temporaryToast(
-                "Hmm, I can't seem to find anyone with that username or email!",
-                5000
-              );
-              break;
-            case 'INVALID_PASSWORD_ERROR':
-              (this.$parent?.$parent as App).temporaryToast(
-                'No, that is not the password.',
-                5000
-              );
-              break;
-            case 'INTERNAL_ERROR':
-              (this.$parent?.$parent as App).temporaryToast(
-                'The server did something weird, lets try again later.',
-                5000
-              );
-              break;
-            default:
-              (this.$parent?.$parent as App).temporaryToast(
-                'I did something weird, lets try again later.',
-                5000
-              );
-              console.error(error);
-          }
-        } else {
-          (this.$parent?.$parent as App).temporaryToast(
-            'I did something weird, lets try again later.',
-            5000
-          );
-          console.error(error);
-        }
-      }
-    }
+<script lang="ts">
+  export default {
+    methods: {
+      async submitSignIn() {
+        try {
+          let a = new FormData(signInForm);
 
-    async submitRegister() {
-      try {
-        let a = new FormData(this.$refs.registerForm);
-
-        if (a.get('password') !== a.get('repeatPassword')) {
-          (this.$parent?.$parent as any).temporaryToast(
-            'These passwords do not match!',
-            5000
-          );
-        } else {
-          let createAccRes = await this.$store.dispatch('createAccount', {
-            username: a.get('username') as string,
-            password: a.get('password') as string,
-            repeatPassword: a.get('repeatPassword') as string,
-            email: a.get('email') as string,
+          let loginRes = await this.$store.dispatch('login', {
+            user: a.get('user'),
+            pass: a.get('pass'),
             rememberMe: a.has('rememberMe')
           });
-          if (createAccRes === true) this.authedRedir();
-        }
-      } catch (error) {
-        if (error instanceof Cumulonimbus.ResponseError) {
-          switch (error.code) {
-            case 'MISSING_FIELDS_ERROR':
-              (this.$parent?.$parent as App).temporaryToast(
-                'You need to fill everything out.',
-                5000
-              );
-              break;
-            case 'RATELIMITED_ERROR':
-              (this.$parent?.$parent as App).ratelimitToast(
-                error.ratelimit.resetsAt
-              );
-              break;
-            case 'USER_EXISTS_ERROR':
-              (this.$parent?.$parent as App).temporaryToast(
-                'Someone already has that username or email!',
-                5000
-              );
-              break;
-            case 'INTERNAL_ERROR':
-              (this.$parent?.$parent as App).temporaryToast(
-                'The server did something weird, lets try again later.',
-                5000
-              );
-              break;
-            default:
-              (this.$parent?.$parent as App).temporaryToast(
-                'I did something weird, lets try again later.',
-                5000
-              );
-              console.error(error);
+          if (loginRes === true) this.authedRedir();
+        } catch (error) {
+          if (error instanceof Cumulonimbus.ResponseError) {
+            switch (error.code) {
+              case 'BANNED_ERROR':
+                toaster?.temporaryToast(
+                  "Uh oh, looks like you've been banned from Cumulonimbus, sorry for the inconvenience.",
+                  5000
+                );
+                break;
+              case 'RATELIMITED_ERROR':
+                (this.$parent?.$parent as App).ratelimitToast(
+                  error.ratelimit.resetsAt
+                );
+                break;
+              case 'INVALID_USER_ERROR':
+                (this.$parent?.$parent as App).temporaryToast(
+                  "Hmm, I can't seem to find anyone with that username or email!",
+                  5000
+                );
+                break;
+              case 'INVALID_PASSWORD_ERROR':
+                (this.$parent?.$parent as App).temporaryToast(
+                  'No, that is not the password.',
+                  5000
+                );
+                break;
+              case 'INTERNAL_ERROR':
+                (this.$parent?.$parent as App).temporaryToast(
+                  'The server did something weird, lets try again later.',
+                  5000
+                );
+                break;
+              default:
+                (this.$parent?.$parent as App).temporaryToast(
+                  'I did something weird, lets try again later.',
+                  5000
+                );
+                console.error(error);
+            }
+          } else {
+            (this.$parent?.$parent as App).temporaryToast(
+              'I did something weird, lets try again later.',
+              5000
+            );
+            console.error(error);
           }
-        } else {
-          (this.$parent?.$parent as App).temporaryToast(
-            'I did something weird, lets try again later.',
-            5000
-          );
-          console.error(error);
         }
+      },
+
+      async submitRegister() {
+        try {
+          let a = new FormData(this.$refs.registerForm);
+
+          if (a.get('password') !== a.get('repeatPassword')) {
+            (this.$parent?.$parent as any).temporaryToast(
+              'These passwords do not match!',
+              5000
+            );
+          } else {
+            let createAccRes = await this.$store.dispatch('createAccount', {
+              username: a.get('username') as string,
+              password: a.get('password') as string,
+              repeatPassword: a.get('repeatPassword') as string,
+              email: a.get('email') as string,
+              rememberMe: a.has('rememberMe')
+            });
+            if (createAccRes === true) this.authedRedir();
+          }
+        } catch (error) {
+          if (error instanceof Cumulonimbus.ResponseError) {
+            switch (error.code) {
+              case 'MISSING_FIELDS_ERROR':
+                (this.$parent?.$parent as App).temporaryToast(
+                  'You need to fill everything out.',
+                  5000
+                );
+                break;
+              case 'RATELIMITED_ERROR':
+                (this.$parent?.$parent as App).ratelimitToast(
+                  error.ratelimit.resetsAt
+                );
+                break;
+              case 'USER_EXISTS_ERROR':
+                (this.$parent?.$parent as App).temporaryToast(
+                  'Someone already has that username or email!',
+                  5000
+                );
+                break;
+              case 'INTERNAL_ERROR':
+                (this.$parent?.$parent as App).temporaryToast(
+                  'The server did something weird, lets try again later.',
+                  5000
+                );
+                break;
+              default:
+                (this.$parent?.$parent as App).temporaryToast(
+                  'I did something weird, lets try again later.',
+                  5000
+                );
+                console.error(error);
+            }
+          } else {
+            (this.$parent?.$parent as App).temporaryToast(
+              'I did something weird, lets try again later.',
+              5000
+            );
+            console.error(error);
+          }
+        }
+      },
+
+      signInOrRegister(e: boolean) {
+        this.$data.signIn = e;
+      },
+
+      authedRedir() {
+        const urlSearchParams = new URLSearchParams(window.location.search);
+        this.$router.push(
+          urlSearchParams.has('redirect')
+            ? (urlSearchParams.get('redirect') as string)
+            : '/dashboard'
+        );
+      },
+      success() {
+        const urlSearchParams = new URLSearchParams(window.location.search);
+        this.$router.push(
+          urlSearchParams.has('redirect')
+            ? (urlSearchParams.get('redirect') as string)
+            : '/dashboard'
+        );
       }
-    }
-
-    signInOrRegister(e: boolean) {
-      this.$data.signIn = e;
-    }
-
-    authedRedir() {
-      const urlSearchParams = new URLSearchParams(window.location.search);
-      this.$router.push(
-        urlSearchParams.has('redirect')
-          ? (urlSearchParams.get('redirect') as string)
-          : '/dashboard'
-      );
-    }
+    },
 
     async mounted() {
       if (!navigator.onLine) {
@@ -252,16 +252,7 @@
         this.authedRedir();
       }
     }
-
-    success() {
-      const urlSearchParams = new URLSearchParams(window.location.search);
-      this.$router.push(
-        urlSearchParams.has('redirect')
-          ? (urlSearchParams.get('redirect') as string)
-          : '/dashboard'
-      );
-    }
-  }
+  };
 </script>
 
 <style>

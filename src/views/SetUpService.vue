@@ -65,7 +65,7 @@
   import Modal from '@/components/Modal.vue';
   import Loading from '@/components/Loading.vue';
   import App from '@/App.vue';
-  import { Client, Cumulonimbus } from '../../../cumulonimbus-wrapper';
+  import { Client, Cumulonimbus } from 'cumulonimbus-wrapper';
 
   @Options({
     components: { ContentBox, Modal, Loading },

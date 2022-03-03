@@ -73,7 +73,7 @@
 
 <script lang="ts">
   import { Options, Vue } from 'vue-class-component';
-  import { Client, Cumulonimbus } from '../../../../cumulonimbus-wrapper';
+  import { Client, Cumulonimbus } from 'cumulonimbus-wrapper';
   import Paginator from '@/components/Paginator.vue';
   import Loading from '@/components/Loading.vue';
   import ConfirmModal from '@/components/ConfirmModal.vue';

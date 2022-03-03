@@ -44,7 +44,7 @@
 <script lang="ts">
   import { Options, Vue } from 'vue-class-component';
   import App from '@/App.vue';
-  import { Client, Cumulonimbus } from '../../../cumulonimbus-wrapper';
+  import { Client, Cumulonimbus } from 'cumulonimbus-wrapper';
   import Loading from '@/components/Loading.vue';
 
   const labelText = {
